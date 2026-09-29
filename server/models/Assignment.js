@@ -7,7 +7,7 @@ const AssignmentSchema = new mongoose.Schema({
   attachedResources: [{
     title: String,
     url: String,
-    type: String // PDF, Link, PPT, Code
+    type: { type: String } // PDF, Link, PPT, Code
   }],
   deadline: { type: Date, required: true },
   totalMarks: { type: Number, default: 100 },
