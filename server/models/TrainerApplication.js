@@ -26,7 +26,7 @@ const TrainerApplicationSchema = new mongoose.Schema({
   certifications: [{ type: String }],
   achievements: [{ type: String }],
   teachingExperience: { type: String, required: true },
-  publications: { type: String, default: '' },
+  publications: { type: mongoose.Schema.Types.Mixed, default: [] },
 
   // Application Status
   status: { 

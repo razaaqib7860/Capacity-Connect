@@ -13,12 +13,20 @@ exports.analyzeGap = async (req, res) => {
 
     const engineAnalysis = await analyzeTraineeCompetency(profile);
 
-    const aiAdvice = await aiService.generateGapAnalysis(
-      req.user.name,
-      profile.currentSkills,
-      profile.targetCompetency || 'Technical Project Lead',
-      engineAnalysis.identifiedGaps
-    );
+    const profileData = {
+      name: req.user ? req.user.name : 'Trainee',
+      highestQualification: profile.highestQualification || 'B.Tech / CS',
+      institution: profile.institution || 'University',
+      currentRole: profile.currentRole || 'Software Engineer',
+      targetCompetency: profile.targetCompetency || 'Technical Project Lead',
+      currentSkills: profile.currentSkills || [],
+      careerInterests: profile.careerInterests || [],
+      resumeText: profile.resumeText || '',
+      linkedinUrl: profile.linkedinUrl || '',
+      githubUrl: profile.githubUrl || ''
+    };
+
+    const aiAdvice = await aiService.generateGapAnalysis(profileData);
 
     res.json({
       engineAnalysis,

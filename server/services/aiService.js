@@ -13,23 +13,58 @@ class AIService {
   }
 
   /**
+   * Internal helper to execute prompt against active Gemini models with fallback list.
+   */
+  async generateContent(prompt) {
+    if (!this.apiKey) {
+      throw new Error('GEMINI_API_KEY is missing');
+    }
+
+    const modelsToTry = [
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro'
+    ];
+
+    let lastError = null;
+    for (const model of modelsToTry) {
+      try {
+        const response = await this.ai.models.generateContent({
+          model,
+          contents: prompt
+        });
+        if (response && response.text) {
+          return response.text;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`Gemini model [${model}] attempt failed: ${err.message}. Trying next fallback model...`);
+      }
+    }
+    throw lastError || new Error('All Gemini model fallbacks failed');
+  }
+
+  /**
    * Comprehensive Gemini AI profile & competency gap analysis.
    */
   async generateGapAnalysis(profileData) {
+    const data = typeof profileData === 'object' ? profileData : { name: String(profileData || 'Trainee') };
     const prompt = `You are an AI Capacity Building & Competency Coach for the CAPACITY CONNECT platform.
 Analyze the following trainee's full professional background:
 
-Name: ${profileData.name}
-Highest Qualification: ${profileData.highestQualification} (${profileData.institution})
-Current Role: ${profileData.currentRole}
-Target Competency: ${profileData.targetCompetency}
-Current Skills: ${JSON.stringify(profileData.currentSkills)}
-Career Interests: ${JSON.stringify(profileData.careerInterests)}
-Resume Summary: ${profileData.resumeText || 'Software Engineer with JavaScript, Python, SQL expertise.'}
-LinkedIn: ${profileData.linkedinUrl || 'N/A'}
-GitHub: ${profileData.githubUrl || 'N/A'}
+Name: ${data.name || 'Trainee'}
+Highest Qualification: ${data.highestQualification || 'Bachelor of Technology/Science'} (${data.institution || 'University'})
+Current Role: ${data.currentRole || 'Software Engineer'}
+Target Competency: ${data.targetCompetency || 'Technical Project Lead'}
+Current Skills: ${JSON.stringify(data.currentSkills || ['JavaScript', 'Python', 'SQL'])}
+Career Interests: ${JSON.stringify(data.careerInterests || ['Cloud Infrastructure', 'DevOps'])}
+Resume Summary: ${data.resumeText || 'Software developer with core programming background.'}
+LinkedIn: ${data.linkedinUrl || 'N/A'}
+GitHub: ${data.githubUrl || 'N/A'}
 
-Return ONLY valid JSON in this structure:
+Return ONLY valid JSON with no extra commentary or markdown formatting:
 {
   "summary": "2-sentence high-level summary of candidate strengths and skill gaps",
   "priorityFocusArea": "Primary skill area to target first",
@@ -47,27 +82,54 @@ Return ONLY valid JSON in this structure:
 }`;
 
     if (!this.apiKey) {
-      return this.fallbackGapAnalysis(profileData);
+      return this.fallbackGapAnalysis(data);
     }
 
     try {
-      const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-      });
-      
-      const text = response.text;
+      const text = await this.generateContent(prompt);
       const cleanJsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJsonStr);
     } catch (err) {
       console.warn('Gemini API call failed, using rule-based AI fallback:', err.message);
-      return this.fallbackGapAnalysis(profileData);
+      return this.fallbackGapAnalysis(data);
+    }
+  }
+
+  /**
+   * Explain trainer matching compatibility based on trainee gaps.
+   */
+  async explainTrainerMatch(traineeName, trainerName, trainerExpertise, gaps) {
+    const prompt = `You are an AI Talent & Training Matchmaker for CAPACITY CONNECT.
+Trainee: ${traineeName}
+Trainer: ${trainerName}
+Trainer Expertise: ${JSON.stringify(trainerExpertise)}
+Trainee Skill Gaps: ${JSON.stringify(gaps)}
+
+Return ONLY valid JSON:
+{
+  "matchScore": 94,
+  "explanation": "Detailed 2-sentence explanation of why ${trainerName} is an optimal mentor for ${traineeName}.",
+  "keySynergies": ["Expertise alignment", "Hands-on project mentoring"],
+  "recommendedNextStep": "Book a 1-on-1 mentorship session"
+}`;
+
+    if (!this.apiKey) {
+      return this.fallbackTrainerMatch(traineeName, trainerName, trainerExpertise);
+    }
+
+    try {
+      const text = await this.generateContent(prompt);
+      const cleanJsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJsonStr);
+    } catch (err) {
+      console.warn('Gemini trainer match failed, using fallback:', err.message);
+      return this.fallbackTrainerMatch(traineeName, trainerName, trainerExpertise);
     }
   }
 
   fallbackGapAnalysis(profileData) {
     return {
-      summary: `${profileData.name || 'Candidate'} has strong core fundamentals in Python, JavaScript, and SQL, but shows high priority skill gaps in Cloud Computing, DevOps, and System Design for the ${profileData.targetCompetency || 'Technical Project Lead'} role.`,
+      summary: `${profileData.name || 'Candidate'} has strong core fundamentals, but shows high priority skill gaps in Cloud Computing, DevOps, and System Design for the ${profileData.targetCompetency || 'Technical Project Lead'} role.`,
       priorityFocusArea: 'Cloud Computing & DevOps',
       skillGaps: [
         { skill: 'Cloud Computing', gapLevel: 'HIGH', description: 'Required for enterprise cloud infrastructure design' },
@@ -94,6 +156,16 @@ Return ONLY valid JSON in this structure:
       expectedOutcome: `Elevate competency score from 72% to 92%+ and qualify for ${profileData.targetCompetency || 'Technical Project Lead'} roles.`
     };
   }
+
+  fallbackTrainerMatch(traineeName, trainerName, trainerExpertise) {
+    return {
+      matchScore: 92,
+      explanation: `${trainerName} specializes in ${Array.isArray(trainerExpertise) ? trainerExpertise.join(', ') : 'Cloud & Software Engineering'}, directly matching the top competency gap areas for ${traineeName}.`,
+      keySynergies: ['Direct domain overlap', 'Proven mentorship track record'],
+      recommendedNextStep: 'Schedule introductory consultation session.'
+    };
+  }
 }
 
 module.exports = new AIService();
+

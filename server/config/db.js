@@ -8,9 +8,9 @@ const connectDB = async () => {
     const connUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/capacity_connect';
     console.log(`Connecting to MongoDB at: ${connUri}...`);
     
-    // Set a short server selection timeout so fallback triggers fast if local mongo isn't active
+    // Connect with 10s timeout to allow Cloud Atlas initial connection handshake
     await mongoose.connect(connUri, {
-      serverSelectionTimeoutMS: 2500
+      serverSelectionTimeoutMS: 10000
     });
     console.log(`MongoDB Connected successfully: ${mongoose.connection.host}`);
   } catch (err) {
