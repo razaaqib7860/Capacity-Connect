@@ -1,0 +1,22 @@
+{
+  "name": "capacity-connect",
+  "version": "1.0.0",
+  "description": "CAPACITY CONNECT — AI-Powered Capacity Building & LMS Platform",
+  "main": "server/server.js",
+  "scripts": {
+    "build:client": "cd client && npm install && npm run build",
+    "install:server": "cd server && npm install",
+    "build": "npm run build:client",
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "keywords": [
+    "sih",
+    "mern",
+    "capacity-building",
+    "lms",
+    "competency-engine"
+  ],
+  "author": "Antigravity",
+  "license": "ISC"
+}
