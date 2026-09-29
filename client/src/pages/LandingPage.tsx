@@ -35,8 +35,8 @@ export const LandingPage: React.FC = () => {
               <span>SIH PROBLEM STATEMENT: Digital Capacity Building & LMS Portal</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-white mb-6">
-              From Learning to <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-emerald-400">Competency.</span>
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight text-white mb-6">
+              From Learning to <span className="text-teal-400 font-extrabold underline decoration-teal-500/40 underline-offset-8">Competency.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-8">
