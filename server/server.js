@@ -28,7 +28,6 @@ app.use(async (req, res, next) => {
   if (req.path.startsWith('/api') && mongoose.connection.readyState !== 1) {
     try {
       await connectDB();
-      await seedData();
     } catch (err) {
       console.error('Database connection error:', err);
     }
