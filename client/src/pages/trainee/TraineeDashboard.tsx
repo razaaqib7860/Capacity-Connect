@@ -17,6 +17,7 @@ import {
 
 export const TraineeDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
+  const [myCourses, setMyCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,8 +26,12 @@ export const TraineeDashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const res = await api.getTraineeDashboard();
-      setData(res);
+      const [dashRes, myCoursesRes] = await Promise.all([
+        api.getTraineeDashboard(),
+        api.getMyCourses().catch(() => [])
+      ]);
+      setData(dashRes);
+      setMyCourses(myCoursesRes || []);
     } catch (err) {
       console.error('Error loading trainee dashboard:', err);
     } finally {
@@ -143,9 +148,65 @@ export const TraineeDashboard: React.FC = () => {
       {/* DASHBOARD DETAILED GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left Column: Recommended Courses & Upcoming Assessment */}
+        {/* Left Column: Enrolled Courses, Recommended Courses & Upcoming Assessment */}
         <div className="lg:col-span-2 space-y-8">
           
+          {/* My Enrolled Courses Section */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-teal-400" /> My Enrolled Courses
+                </h2>
+                <p className="text-xs text-slate-400">Your active learning paths & progress</p>
+              </div>
+              <span className="text-xs bg-teal-500/10 text-teal-300 px-3 py-1 rounded-full font-mono font-bold border border-teal-500/30">
+                {myCourses.length} Active Courses
+              </span>
+            </div>
+
+            {myCourses.length > 0 ? (
+              <div className="space-y-4">
+                {myCourses.map((item: any, idx: number) => {
+                  const courseObj = item.course || item;
+                  return (
+                    <div key={idx} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-teal-500/40 transition">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] bg-teal-500/10 text-teal-300 px-2 py-0.5 rounded font-mono uppercase font-semibold">
+                            {courseObj.category || 'General'}
+                          </span>
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono uppercase font-bold">
+                            ENROLLED ({item.status || 'IN_PROGRESS'})
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-white">{courseObj.title}</h3>
+                        <p className="text-xs text-slate-400">Instructor: {courseObj.trainerName || 'Dr. Ananya Sharma'}</p>
+                      </div>
+
+                      <div className="sm:text-right shrink-0 space-y-2">
+                        <div className="text-xs text-teal-400 font-mono font-bold">{item.progress || 45}% Completed</div>
+                        <div className="w-32 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                          <div className="bg-teal-400 h-full" style={{ width: `${item.progress || 45}%` }}></div>
+                        </div>
+                        <Link
+                          to={`/courses/${courseObj._id}`}
+                          className="inline-block px-4 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-xl shadow transition"
+                        >
+                          Continue Learning →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 py-6 text-center bg-slate-950 rounded-2xl border border-slate-800">
+                You have not enrolled in any courses yet. Browse recommended courses below and click <strong>Enroll</strong>.
+              </div>
+            )}
+          </div>
+
           {/* Recommended Courses Section */}
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
