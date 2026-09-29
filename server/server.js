@@ -21,6 +21,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const mongoose = require('mongoose');
+
+// Ensure database connection middleware
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+      await seedData();
+    } catch (err) {
+      console.error('Database connection error:', err);
+    }
+  }
+  next();
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trainee', traineeRoutes);
@@ -37,7 +52,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'CAPACITY CONNECT API', timestamp: new Date() });
 });
 
-// Serve Static Frontend Assets (Single Origin Localhost)
+// Serve Static Frontend Assets (Single Origin Localhost / Standalone mode)
 const clientDistPath = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDistPath));
 
@@ -51,14 +66,17 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-// Connect Database & Start Server
-connectDB().then(async () => {
-  await seedData();
-  app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`🚀 CAPACITY CONNECT Full-Stack App running on http://localhost:${PORT}`);
-    console.log(`====================================================`);
+if (require.main === module) {
+  connectDB().then(async () => {
+    await seedData();
+    app.listen(PORT, () => {
+      console.log(`====================================================`);
+      console.log(`🚀 CAPACITY CONNECT Full-Stack App running on http://localhost:${PORT}`);
+      console.log(`====================================================`);
+    });
+  }).catch(err => {
+    console.error('Failed to start server:', err);
   });
-}).catch(err => {
-  console.error('Failed to start server:', err);
-});
+}
+
+module.exports = app;
