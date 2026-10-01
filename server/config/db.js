@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const seedData = require('../utils/seedData');
 
 let mongoMemoryServer = null;
 
@@ -14,6 +15,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000
     });
     console.log(`MongoDB Connected successfully: ${mongoose.connection.host}`);
+    await seedData().catch(err => console.warn('Seed data warning:', err.message));
   } catch (err) {
     console.warn(`Local MongoDB connection failed (${err.message}). Launching in-memory MongoDB server...`);
     try {
@@ -21,6 +23,7 @@ const connectDB = async () => {
       const memoryUri = mongoMemoryServer.getUri();
       await mongoose.connect(memoryUri);
       console.log(`Connected to In-Memory MongoDB at: ${memoryUri}`);
+      await seedData().catch(err => console.warn('Seed data warning:', err.message));
     } catch (memErr) {
       console.error('Failed to start MongoMemoryServer:', memErr.message);
       process.exit(1);

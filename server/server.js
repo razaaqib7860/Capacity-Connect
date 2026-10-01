@@ -67,6 +67,14 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
 });
 
+// Global Error Handler - Guarantee JSON output on unexpected errors
+app.use((err, req, res, next) => {
+  console.error('Express Error Handler:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error'
+  });
+});
+
 const PORT = process.env.PORT || 5001;
 
 if (require.main === module) {
