@@ -21,11 +21,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const fs = require('fs');
 const mongoose = require('mongoose');
 
-// Ensure database connection middleware
+// Ensure database connection middleware for all requests
 app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api') && mongoose.connection.readyState !== 1) {
+  if (mongoose.connection.readyState !== 1) {
     try {
       await connectDB();
     } catch (err) {
@@ -35,32 +36,35 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/trainee', traineeRoutes);
-app.use('/api/trainer', trainerRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/assessments', assessmentRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/trainer-applications', trainerAppRoutes);
-app.use('/api/assignments', assignmentRoutes);
+// API Routes (mounted on both /api/* and /* for Vercel rewrite compatibility)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/trainee', '/trainee'], traineeRoutes);
+app.use(['/api/trainer', '/trainer'], trainerRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
+app.use(['/api/courses', '/courses'], courseRoutes);
+app.use(['/api/assessments', '/assessments'], assessmentRoutes);
+app.use(['/api/ai', '/ai'], aiRoutes);
+app.use(['/api/trainer-applications', '/trainer-applications'], trainerAppRoutes);
+app.use(['/api/assignments', '/assignments'], assignmentRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', service: 'CAPACITY CONNECT API', timestamp: new Date() });
 });
 
 // Serve Static Frontend Assets (Single Origin Localhost / Standalone mode)
 const clientDistPath = path.join(__dirname, '../client/dist');
-app.use(express.static(clientDistPath));
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+}
 
-// Fallback to index.html for React Router single-page app navigation
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ message: 'API endpoint not found' });
+// Fallback handler
+app.use((req, res) => {
+  const indexPath = path.join(clientDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
   }
-  res.sendFile(path.join(clientDistPath, 'index.html'));
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
 const PORT = process.env.PORT || 5001;
