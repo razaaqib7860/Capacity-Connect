@@ -19,7 +19,10 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const cleanEmail = String(email).toLowerCase().trim();
+    const cleanName = String(name).trim();
+
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
@@ -27,33 +30,37 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const userRole = role || 'trainee';
+    const userRole = (role === 'trainer' || role === 'admin') ? role : 'trainee';
     const newUser = await User.create({
-      name,
-      email,
+      name: cleanName,
+      email: cleanEmail,
       password: hashedPassword,
       role: userRole,
       isApproved: true
     });
 
-    if (userRole === 'trainee') {
-      await TraineeProfile.create({
-        user: newUser._id,
-        headline: headline || 'Trainee Learner',
-        organization: organization || 'Capacity Building Program',
-        currentSkills: [
-          { skill: 'Python', level: 'Intermediate', score: 60 },
-          { skill: 'SQL', level: 'Intermediate', score: 55 }
-        ],
-        targetCompetency: 'Technical Project Lead'
-      });
-    } else if (userRole === 'trainer') {
-      await TrainerProfile.create({
-        user: newUser._id,
-        title: headline || 'Certified Domain Trainer',
-        expertise: expertise || ['Cloud Computing', 'AWS', 'DevOps'],
-        subjects: ['Cloud Fundamentals', 'Enterprise Architectures']
-      });
+    try {
+      if (userRole === 'trainee') {
+        await TraineeProfile.create({
+          user: newUser._id,
+          headline: headline || 'Trainee Learner',
+          organization: organization || 'Capacity Building Program',
+          currentSkills: [
+            { skill: 'Python', level: 'Intermediate', score: 60 },
+            { skill: 'SQL', level: 'Intermediate', score: 55 }
+          ],
+          targetCompetency: 'Technical Project Lead'
+        });
+      } else if (userRole === 'trainer') {
+        await TrainerProfile.create({
+          user: newUser._id,
+          title: headline || 'Certified Domain Trainer',
+          expertise: Array.isArray(expertise) ? expertise : ['Cloud Computing', 'AWS', 'DevOps'],
+          subjects: ['Cloud Fundamentals', 'Enterprise Architectures']
+        });
+      }
+    } catch (profileErr) {
+      console.warn('Profile creation non-critical warning:', profileErr.message);
     }
 
     const token = generateToken(newUser._id, newUser.role);
@@ -64,12 +71,12 @@ exports.register = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        avatar: newUser.avatar
+        avatar: newUser.avatar || ''
       }
     });
   } catch (err) {
     console.error('Registration error:', err);
-    res.status(500).json({ message: 'Server error during registration', error: err.message });
+    res.status(500).json({ message: err.message || 'Server error during registration' });
   }
 };
 
@@ -82,7 +89,9 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
+    const cleanEmail = String(email).toLowerCase().trim();
+
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -105,12 +114,12 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar || ''
       }
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({ message: err.message || 'Server error during login' });
   }
 };
 
