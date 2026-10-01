@@ -105,7 +105,10 @@ exports.submitAttempt = async (req, res) => {
         const categorySkill = assessment.subject || assessment.course.category;
         
         // Find existing skill or push new
-        let existingSkill = profile.currentSkills.find(s => s.skill.toLowerCase().includes(categorySkill.toLowerCase()) || categorySkill.toLowerCase().includes(s.skill.toLowerCase()));
+        let existingSkill = profile.currentSkills.find(s => {
+          const sName = typeof s === 'string' ? s : (s && s.skill ? s.skill : '');
+          return sName && (sName.toLowerCase().includes(categorySkill.toLowerCase()) || categorySkill.toLowerCase().includes(sName.toLowerCase()));
+        });
         if (existingSkill) {
           existingSkill.score = Math.min(95, Math.max(existingSkill.score + 25, percentage));
           if (existingSkill.score > 70) existingSkill.level = 'Advanced';

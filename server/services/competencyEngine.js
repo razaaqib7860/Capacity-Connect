@@ -27,7 +27,12 @@ async function analyzeTraineeCompetency(traineeProfile) {
 
   const currentSkillMap = new Map();
   (traineeProfile.currentSkills || []).forEach(s => {
-    currentSkillMap.set(s.skill.toLowerCase(), s.score || 40);
+    if (!s) return;
+    const name = typeof s === 'string' ? s : (s.skill || '');
+    const score = (typeof s === 'object' && typeof s.score === 'number') ? s.score : 50;
+    if (name) {
+      currentSkillMap.set(name.toLowerCase(), score);
+    }
   });
 
   const identifiedGaps = [];
