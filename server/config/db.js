@@ -5,8 +5,9 @@ let mongoMemoryServer = null;
 
 const connectDB = async () => {
   try {
-    const connUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/capacity_connect';
-    console.log(`Connecting to MongoDB at: ${connUri}...`);
+    const DEFAULT_URI = 'mongodb+srv://razaaqib7860_db_user:jDrheaakP1wzKBf6@capacity.ssjb2pb.mongodb.net/?appName=capacity';
+    const connUri = process.env.MONGODB_URI || DEFAULT_URI;
+    console.log(`Connecting to MongoDB...`);
     
     // Connect with 10s timeout to allow Cloud Atlas initial connection handshake
     await mongoose.connect(connUri, {
