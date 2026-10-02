@@ -11,6 +11,8 @@ const connectDB = async () => {
   const DEFAULT_URI = 'mongodb+srv://razaaqib7860_db_user:jDrheaakP1wzKBf6@capacity.ssjb2pb.mongodb.net/?appName=capacity';
   const connUri = process.env.MONGODB_URI || DEFAULT_URI;
 
+  mongoose.set('bufferCommands', false);
+
   try {
     console.log('Connecting to MongoDB Atlas...');
     cachedConnection = await mongoose.connect(connUri, {
