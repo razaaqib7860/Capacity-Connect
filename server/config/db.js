@@ -13,15 +13,18 @@ const connectDB = async () => {
   }
 
   const DEFAULT_URI = 'mongodb+srv://razaaqib7860_db_user:jDrheaakP1wzKBf6@capacity.ssjb2pb.mongodb.net/?appName=capacity';
-  const connUri = process.env.MONGODB_URI || DEFAULT_URI;
+  let rawUri = process.env.MONGODB_URI || DEFAULT_URI;
+  if (typeof rawUri === 'string') {
+    rawUri = rawUri.trim().replace(/^["']|["']$/g, '').trim();
+  }
+  const connUri = rawUri;
 
   mongoose.set('bufferCommands', false);
 
   console.log('Connecting to MongoDB Atlas...');
   cachedPromise = mongoose.connect(connUri, {
     serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-    family: 4
+    connectTimeoutMS: 10000
   }).then(conn => {
     console.log(`MongoDB Connected successfully: ${conn.connection.host}`);
     seedData().catch(err => console.warn('Seed data warning:', err.message));
