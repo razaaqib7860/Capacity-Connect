@@ -32,7 +32,7 @@ app.use(async (req, res, next) => {
     } catch (err) {
       console.error('Database connection error in middleware:', err.message);
       return res.status(503).json({
-        message: 'Database connection unavailable. Please check MongoDB Atlas IP access whitelist (0.0.0.0/0).',
+        message: `Database connection error: ${err.message}`,
         error: err.message
       });
     }
